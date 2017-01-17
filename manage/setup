@@ -1,0 +1,60 @@
+#!/usr/bin/env bash
+
+# Right now this file is only designed around OSX and has only
+# really been tested on Yosemite
+
+echo "This script is meant to help quickstart a Go environment on OSX using homebrew."
+echo "We'll take a look at your system and see what actions need to be done."
+
+prompt-user() {
+    while true
+    do
+        read -p "Continue (y/n)?" -n 1 -s choice
+        echo
+        case "$choice" in
+            y|Y ) return 0;;
+            n|N ) return 1;;
+        esac
+    done
+}
+
+execute-command() {
+    echo "About to execute command: \"$@\""
+    if prompt-user ; then
+        $@
+    else
+        exit
+    fi
+}
+
+echo "Seeing if you have homebrew installed..."
+if ! which brew > /dev/null ; then
+    echo "'brew' doesn't appear to be on the path, indicating you don't have homebrew installed."
+    echo "Let's try to install homebrew, as we'll be using it to install go..."
+    execute-command /usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
+    echo "Alright, let's move on"
+fi
+
+echo "Seeing if you have go installed..."
+if ! which go > /dev/null ; then
+    echo "'go' doesn't appear on your path, it's probably not installed. Let's try to fix that"
+    execute-command brew install go
+fi
+
+# For some infuriating reason, this seems like the easiest way to do this on OSX
+cd "$(dirname "$0")"
+cd ../
+
+PATHVAR="GOPATH=$(pwd)"
+
+if ! grep $PATHVAR ~/.bash_profile > /dev/null; then
+    echo "This GOPATH is not currently getting set in your bash_profile. GOPATH is kind of silly and annoying but go requires it to work so putting it in your bash_profile helps you not have to worry about it."
+    execute-command echo "export GOPATH=$(pwd)" >> ~/.bash_profile
+fi
+
+echo "Make sure to checkout https://golang.org/doc/install for a proper Go getting started tutorial..."
+
+if [[ "$GOPATH" != $(pwd) ]] ; then
+    echo "Pretty much all done, but your GOPATH is still not set in this current session, but that's okay. Unfortunately we can't do it for you in this script (bash won't allow us) but if you run the following command by yourself after it exits you should be all set:"
+    echo -e "\t export $PATHVAR"
+fi
